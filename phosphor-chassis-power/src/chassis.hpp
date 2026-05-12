@@ -20,6 +20,7 @@
 
 #include <sdbusplus/bus.hpp>
 
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <optional>
@@ -130,6 +131,57 @@ class Chassis
     {
         return powerSystemInputsInterface;
     }
+
+    /**
+     * Check if chassis is present.
+     *
+     * Checks presence by verifying presence path exists or reading presence
+     * GPIO.
+     *
+     * @return true if chassis is present, false otherwise
+     */
+    bool isPresent() const;
+
+    /**
+     * Check if chassis is powered on.
+     *
+     * Determines power state by checking if fault-unlatched GPIO is NOT active.
+     *
+     * @return true if chassis is powered on, false otherwise
+     */
+    bool isPoweredOn() const;
+
+    /**
+     * Check if fault-unlatched GPIO is active.
+     *
+     * @return true if fault is active, false otherwise
+     */
+    bool isFaultUnlatchedActive() const;
+
+    /**
+     * Find a GPIO by name.
+     *
+     * @param name GPIO name to find
+     * @return pointer to GPIO if found, nullptr otherwise
+     */
+    const Gpio* findGpioByName(const std::string& name) const;
+
+    /**
+     * Set output GPIO to enable or disable.
+     *
+     * @param gpioName name of the GPIO to set
+     * @param enable true to enable (set active), false to disable (set
+     * inactive)
+     */
+    void setGpioOutput(const std::string& gpioName, bool enable);
+
+    /**
+     * Read input GPIO value.
+     *
+     * @param gpioName name of the GPIO to read
+     * @return GPIO value (0 or 1), or default value if read fails
+     */
+    int readGpioInput(const std::string& gpioName) const;
 
   private:
     /**

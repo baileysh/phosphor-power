@@ -96,6 +96,16 @@ class Manager
         system.reset();
     }
 
+    /**
+     * Returns the System object.
+     *
+     * @return pointer to System object, or nullptr if not created
+     */
+    System* getSystem()
+    {
+        return system.get();
+    }
+
   private:
     /**
      * Callback to begin failure process after not finding a Compatible system.

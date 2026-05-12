@@ -18,8 +18,10 @@
 #include "chassis.hpp"
 
 #include <sdbusplus/bus.hpp>
+#include <sdbusplus/server.hpp>
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -69,11 +71,80 @@ class System
      */
     void initializePowerSystemInputs(sdbusplus::bus_t& bus);
 
+    /**
+     * Handle BMC reset - R-PCP-2.
+     *
+     * After BMC reset, configure GPIOs based on chassis presence and power
+     * state:
+     * - For missing sleds: disable reset-enable and fault-reset GPIOs
+     * - For present sleds:
+     *   - If fault-unlatched active: disable GPIOs, set Status=Fault
+     *   - If sled off: disable GPIOs
+     *   - If sled on: enable GPIOs
+     */
+    void handleBmcReset();
+
+    /**
+     * Handle chassis state change - R-PCP-3, R-PCP-4, R-PCP-5, R-PCP-7.
+     *
+     * Called when a chassis state property changes on D-Bus.
+     *
+     * @param chassisNumber chassis number that changed
+     * @param propertyName name of the property that changed
+     * @param value new property value
+     */
+    void handleChassisStateChange(unsigned int chassisNumber,
+                                  const std::string& propertyName,
+                                  const std::string& value);
+
+    /**
+     * Monitor chassis state changes via D-Bus.
+     *
+     * Sets up D-Bus matches to monitor chassis state property changes.
+     *
+     * @param bus D-Bus bus object
+     */
+    void monitorChassisStateChanges(sdbusplus::bus_t& bus);
+
+    /**
+     * Disable GPIOs for a chassis.
+     *
+     * Disables reset-enable and fault-reset GPIOs.
+     *
+     * @param chassis chassis to disable GPIOs for
+     */
+    void disableChassisGpios(Chassis& chassis);
+
+    /**
+     * Enable GPIOs for a chassis.
+     *
+     * Enables reset-enable and fault-reset GPIOs.
+     *
+     * @param chassis chassis to enable GPIOs for
+     */
+    void enableChassisGpios(Chassis& chassis);
+
+    /**
+     * Create PEL for power fault.
+     *
+     * Creates PEL with ID 110074F0 for power fault scenarios.
+     *
+     * @param chassisNumber chassis number with fault
+     * @param message fault message
+     */
+    void createPowerFaultPEL(unsigned int chassisNumber,
+                             const std::string& message);
+
   private:
     /**
      * Chassis in the system.
      */
     std::vector<std::unique_ptr<Chassis>> chassis{};
+
+    /**
+     * D-Bus matches for monitoring chassis state changes.
+     */
+    std::vector<std::unique_ptr<sdbusplus::bus::match_t>> stateMatches{};
 };
 
 } // namespace phosphor::power::chassis

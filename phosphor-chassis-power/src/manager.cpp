@@ -147,6 +147,14 @@ void Manager::loadConfigFile()
 
             // Initialize power system inputs status for all chassis
             system->initializePowerSystemInputs(bus);
+
+            // Handle BMC reset - configure GPIOs based on current state
+            // (R-PCP-2)
+            system->handleBmcReset();
+
+            // Set up monitoring for chassis state changes (R-PCP-3 through
+            // R-PCP-7)
+            system->monitorChassisStateChanges(bus);
         }
         else
         {

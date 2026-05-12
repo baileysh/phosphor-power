@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <gpiod.hpp>
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -116,6 +118,26 @@ class Gpio
     {
         return defaultValue;
     }
+
+    /**
+     * Read the current value of this GPIO.
+     *
+     * Opens the GPIO chip and line, reads the value, and returns it.
+     * Handles polarity automatically.
+     *
+     * @return GPIO value (0 or 1), or default value if read fails
+     */
+    int read() const;
+
+    /**
+     * Write a value to this GPIO.
+     *
+     * Opens the GPIO chip and line, and writes the specified value.
+     * Handles polarity automatically.
+     *
+     * @param enable true to set GPIO active, false to set inactive
+     */
+    void write(bool enable);
 
   private:
     /**
