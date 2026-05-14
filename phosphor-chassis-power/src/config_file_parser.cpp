@@ -34,7 +34,8 @@ namespace phosphor::power::chassis::config_file_parser
 {
 
 std::vector<std::unique_ptr<Chassis>> parse(
-    const std::filesystem::path& pathName, Services& services)
+    const std::filesystem::path& pathName, Services& services,
+    const sdeventplus::Event& event)
 {
     try
     {
@@ -43,7 +44,7 @@ std::vector<std::unique_ptr<Chassis>> parse(
         json rootElement = json::parse(file);
 
         // Parse tree of JSON elements and return corresponding C++ objects
-        return internal::parseRoot(rootElement, services);
+        return internal::parseRoot(rootElement, services, event);
     }
     catch (const std::exception& e)
     {
@@ -54,7 +55,8 @@ std::vector<std::unique_ptr<Chassis>> parse(
 namespace internal
 {
 
-std::unique_ptr<Chassis> parseChassis(const json& element, Services& services)
+std::unique_ptr<Chassis> parseChassis(const json& element, Services& services,
+                                      const sdeventplus::Event& event)
 {
     verifyIsObject(element);
     unsigned int propertyCount{0};
@@ -123,18 +125,20 @@ std::unique_ptr<Chassis> parseChassis(const json& element, Services& services)
     verifyPropertyCount(element, propertyCount);
 
     return std::make_unique<Chassis>(number,
-                                    std::shared_ptr<Services>(&services, [](Services*){}),
-                                    std::move(presencePath), std::move(gpios));
+                                     std::shared_ptr<Services>(&services, [](Services*){}),
+                                     event, std::move(presencePath),
+                                     std::move(gpios));
 }
 
 std::vector<std::unique_ptr<Chassis>> parseChassisArray(const json& element,
-                                                        Services& services)
+                                                        Services& services,
+                                                        const sdeventplus::Event& event)
 {
     verifyIsArray(element);
     std::vector<std::unique_ptr<Chassis>> chassis;
     for (auto& chassisElement : element)
     {
-        chassis.emplace_back(parseChassis(chassisElement, services));
+        chassis.emplace_back(parseChassis(chassisElement, services, event));
     }
     return chassis;
 }
@@ -233,12 +237,13 @@ GpioPolarity parsePolarity(const std::string& polarityStr)
 }
 
 std::vector<std::unique_ptr<Chassis>> parseRoot(const json& element,
-                                                Services& services)
+                                                Services& services,
+                                                const sdeventplus::Event& event)
 {
     verifyIsArray(element);
 
     // Parse the array of chassis objects
-    return parseChassisArray(element, services);
+    return parseChassisArray(element, services, event);
 }
 
 } // namespace internal

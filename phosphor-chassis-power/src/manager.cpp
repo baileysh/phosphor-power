@@ -175,8 +175,8 @@ void Manager::loadConfigFile()
             lg2::info("Loading configuration file {PATH}", "PATH",
                       pathName.string());
 
-            // Parse the config file
-            auto chassis = config_file_parser::parse(pathName, services);
+            // Parse the config file, passing eventLoop to chassis constructor
+            auto chassis = config_file_parser::parse(pathName, services, eventLoop);
 
             // Create System object with parsed chassis, passing services as a
             // shared_ptr (non-owning; Manager owns the Services lifetime)
@@ -192,6 +192,9 @@ void Manager::loadConfigFile()
 
             // Initialize the status monitors for all chassis
             system->initializeStatusMonitors();
+
+            // Handle BMC reset scenario for all chassis
+            handleBMCReset();
         }
         else
         {
@@ -203,6 +206,20 @@ void Manager::loadConfigFile()
         // Log error messages in journal
         lg2::error("Unable to load configuration file: {EXCEPTION}",
                    "EXCEPTION", e.what());
+    }
+}
+
+void Manager::handleBMCReset()
+{
+    lg2::info("SHELDON:DEBUG:D2: handleBMCReset()");
+    if (!system)
+    {
+        return;
+    }
+
+    for (const auto& chassis : system->getChassis())
+    {
+        chassis->handleBMCReset();
     }
 }
 
